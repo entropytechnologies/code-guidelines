@@ -1,458 +1,691 @@
-# JavaScript Style Guide
+# Laravel & PHP Style Guide
 
-- [Spacing and Indentation in Functions and Control Statements](#spacing-and-indentation-in-functions-and-control-statements)
-- [Spacing and Indentation in Objects and Arrays](#spacing-and-indentation-in-objects-and-arrays)
-- [Line Length](#line-length)
-- [Quotes](#quotes)
-- [Semicolons](#semicolons)
-- [Variable Assignment](#variable-assignment)
-- [Variable Names](#variable-names)
-- [Comparisons](#comparisons)
-- [Function Keyword vs. Arrow Functions](#function-keyword-vs-arrow-functions)
-- [Arrow Function Parameter Brackets](#arrow-function-parameter-brackets)
-- [Object and Array Destructuring](#object-and-array-destructuring)
-- [Vue templates](#vue-templates)
+- [About Laravel](#about-laravel)
+- [General PHP Rules](#general-php-rules)
+- [Class defaults](#class-defaults)
+- [Typed properties](#typed-properties)
+- [Docblocks](#docblocks)
+- [Strings](#strings)
+- [If statements](#if-statements)
+- [Ternary operators](#ternary-operators)
+- [Comments](#comments)
+- [Configuration](#configuration)
+- [Artisan commands](#artisan-commands)
+- [Routing](#routing)
+- [Controllers](#controllers)
+- [Views](#views)
+- [Validation](#validation)
+- [Blade templates](#blade-templates)
+- [Authorization](#authorization)
+- [Translations](#translations)
+- [Naming classes](#naming-classes)
 
-## ESLint
+## About Laravel
 
-This guide should be used side by side with our base ESLint configuration file, which has its own repository and is available on npm.
+First and foremost, Laravel provides the most value when you write things the way Laravel intended you to write. If there's a documented way to achieve something, follow it. Whenever you do something differently, make sure you have a justification for *why* you didn't follow the defaults.
 
-[https://github.com/spatie/eslint-config-spatie](https://github.com/spatie/eslint-config-spatie)
+## General PHP Rules
 
-```
-yarn add --dev eslint-config-spatie
-```
+Code style must follow [PSR-1](http://www.php-fig.org/psr/psr-1/), [PSR-2](http://www.php-fig.org/psr/psr-2/) and [PSR-12](https://www.php-fig.org/psr/psr-12/). Generally speaking, everything string-like that's not public-facing should use camelCase. Detailed examples on these are spread throughout the guide in their relevant sections.
 
-Most projects have a lint script available in their `package.json`.
+### Class defaults
 
-```
-eslint resources/assets/js --ext .js,.vue --fix && exit 0
-```
+By default, we don't use `final`. For our open source stuff, we assume that all our users know they are responsible for writing tests for any overwritten behaviour.
 
-## Code Style
+### Void return types
 
-### Spacing and Indentation in Functions and Control Statements
+If a method return nothing, it should be indicated with `void`. 
+This makes it more clear to the users of your code what your intention was when writing it.
 
-Code must be indented with 4 spaces.
+## Typed properties
 
-```js
-// Good
-function greet(name) {
-    return `Hello ${name}!`;
+You should type a property whenever possible. Don't use a docblock.
+
+```php
+// good
+class Foo
+{
+    public string $bar;
 }
 
-// Bad, only 2 spaces.
-function greet(name) {
-  return `Hello ${name}!`;
-}
-```
-
-When it comes to spaces around symbols or keywords, the rule of thumb is: add them. Everything in this section should be handled by ESLint.
-
-```js
-// Good
-if (true) {
-    // ...
-} else {
-    // ...
-}
-
-// Bad, needs more spaces.
-if(true){
-    // ...
-}else{
-    // ...
+// bad
+class Foo
+{
+    /** @var string */
+    public $bar;
 }
 ```
 
-Infix operators need room to breath.
+## Docblocks
 
-```js
+Don't use docblocks for methods that can be fully type hinted (unless you need a description).
+
+Only add a description when it provides more context than the method signature itself. Use full sentences for descriptions, including a period at the end.
+
+```php
 // Good
-const two = 1 + 1;
+class Url
+{
+    public static function fromString(string $url): Url
+    {
+        // ...
+    }
+}
 
-// Bad, needs more spaces.
-const two = 1+1;
+// Bad: The description is redundant, and the method is fully type-hinted.
+class Url
+{
+    /**
+     * Create a url from a string.
+     *
+     * @param string $url
+     *
+     * @return \Spatie\Url\Url
+     */
+    public static function fromString(string $url): Url
+    {
+        // ...
+    }
+}
 ```
 
-Opening braces should always be on the same line as their corresponding statement or declaration (known as *the one true brace style*).
+Always use fully qualified class names in docblocks.
 
-```js
+```php
 // Good
-if (true) {
-    // ...
+
+/**
+ * @param string $url
+ *
+ * @return \Spatie\Url\Url
+ */
+
+// Bad
+
+/**
+ * @param string $foo
+ *
+ * @return Url
+ */
+```
+
+Docblocks for class variables are required, as there's currently no other way to typehint these.
+
+```php
+// Good
+
+class Foo
+{
+    /** @var \Spatie\Url\Url */
+    private $url;
+
+    /** @var string */
+    private $name;
 }
 
 // Bad
-if (true)
+
+class Foo
+{
+    private $url;
+    private $name;
+}
+```
+
+When possible, docblocks should be written on one line.
+
+```php
+// Good
+
+/** @var string */
+/** @test */
+
+// Bad
+
+/**
+ * @test
+ */
+```
+
+If a variable has multiple types, the most common occurring type should be first.
+
+```php
+// Good
+
+/** @var \Spatie\Goo\Bar|null */
+
+// Bad
+
+/** @var null|\Spatie\Goo\Bar */
+```
+
+## Strings
+
+When possible prefer string interpolation above `sprintf` and the `.` operator.
+
+```php
+// Good
+$greeting = "Hi, I am {$name}.";
+```
+
+```php
+// Bad
+$greeting = 'Hi, I am ' . $name . '.';
+```
+
+
+## Ternary operators
+
+Every portion of a ternary expression should be on its own line unless it's a really short expression.
+
+```php
+// Good
+$result = $object instanceof Model
+    ? $object->name
+    : 'A default value';
+
+$name = $isFoo ? 'foo' : 'bar';
+
+// Bad
+$result = $object instanceof Model ?
+    $object->name :
+   'A default value';
+```
+
+## If statements
+
+### Bracket position
+
+Always use curly brackets.
+
+```php
+// Good
+if ($condition) {
+   ...
+}
+
+// Bad
+if ($condition) ...
+```
+
+### Happy path
+
+Generally a function should have its unhappy path first and its happy path last. In most cases this will cause the happy path being in an unindented part of the function which makes it more readable.
+
+```php
+// Good
+
+if (! $goodCondition) {
+  throw new Exception;
+}
+
+// do work
+```
+
+
+```php
+// Bad
+
+if ($goodCondition) {
+ // do work
+}
+
+throw new Exception;
+```
+
+### Avoid else
+
+In general, `else` should be avoided because it makes code less readable. In most cases it can be refactored using early returns. This will also cause the happy path to go last, which is desirable.
+
+```php
+// Good
+
+if (! $conditionBA) {
+   // conditionB A failed
+   
+   return;
+}
+
+if (! $conditionB) {
+   // conditionB A passed, B failed
+   
+   return;
+}
+
+// condition A and B passed
+```
+
+```php
+// Bad
+
+if ($conditionA) {
+   if ($conditionB) {
+      // condition A and B passed
+   }
+   else {
+     // conditionB A passed, B failed
+   }
+}
+else {
+   // conditionB A failed
+}
+```
+
+
+### Compound ifs
+
+In general, separate `if` statements should be preferred over a compound condition. This makes debugging code easier.
+
+
+```php
+// Good
+if (! $conditionA) {
+   return;
+}
+
+if (! $conditionB) {
+   return;
+}
+
+if (! $conditionC) {
+   return;
+}
+
+// do stuff
+```
+
+```php
+// bad
+if ($conditionA && $conditionB && $conditionC) {
+  // do stuff
+}
+```
+
+
+
+## Comments
+
+Comments should be avoided as much as possible by writing expressive code. If you do need to use a comment, format it like this:
+
+```php
+// There should be a space before a single line comment.
+
+/*
+ * If you need to explain a lot you can use a comment block. Notice the
+ * single * on the first line. Comment blocks don't need to be three
+ * lines long or three characters shorter than the previous line.
+ */
+```
+
+## Whitespace
+
+Statements should have to breathe. In general always add blank lines between statements, unless they're a sequence of single-line equivalent operations. This isn't something enforceable, it's a matter of what looks best in its context.
+
+```php
+// Good
+public function getPage($url)
+{
+    $page = $this->pages()->where('slug', $url)->first();
+
+    if (! $page) {
+        return null;
+    }
+
+    if ($page['private'] && ! Auth::check()) {
+        return null;
+    }
+
+    return $page;
+}
+
+// Bad: Everything's cramped together.
+public function getPage($url)
+{
+    $page = $this->pages()->where('slug', $url)->first();
+    if (! $page) {
+        return null;
+    }
+    if ($page['private'] && ! Auth::check()) {
+        return null;
+    }
+    return $page;
+}
+```
+
+```php
+// Good: A sequence of single-line equivalent operations.
+public function up()
+{
+    Schema::create('users', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->string('password');
+        $table->rememberToken();
+        $table->timestamps();
+    });
+}
+```
+
+Don't add any extra empty lines between `{}` brackets.
+
+```php
+// Good
+if ($foo) {
+    $this->foo = $foo;
+}
+
+// Bad
+if ($foo) {
+
+    $this->foo = $foo;
+
+}
+```
+
+## Configuration
+
+Configuration files must use kebab-case.
+
+```
+config/
+  pdf-generator.php
+```
+
+Configuration keys must use snake_case.
+
+```php
+// config/pdf-generator.php
+return [
+    'chrome_path' => env('CHROME_PATH'),
+];
+```
+
+Avoid using the `env` helper outside of configuration files. Create a configuration value from the `env` variable like above.
+
+## Artisan commands
+
+The names given to artisan commands should all be kebab-cased.
+
+```bash
+# Good
+php artisan delete-old-records
+
+# Bad
+php artisan deleteOldRecords
+```
+
+A command should always give some feedback on what the result is. Minimally you should let the `handle` method spit out a comment at the end indicating that all went well.
+
+```php
+// in a Command
+public function handle()
+{
+    // do some work
+
+    $this->comment('All ok!');
+}
+```
+
+If possible use a descriptive success message eg. `Old records deleted`.
+
+## Routing
+
+Public-facing urls must use kebab-case.
+
+```
+https://spatie.be/open-source
+https://spatie.be/jobs/front-end-developer
+```
+
+Route names must use camelCase.
+
+```php
+Route::get('open-source', 'OpenSourceController@index')->name('openSource');
+```
+
+```html
+<a href="{{ route('openSource') }}">
+    Open Source
+</a>
+```
+
+All routes have an http verb, that's why we like to put the verb first when defining a route. It makes a group of routes very readable. Any other route options should come after it.
+
+```php
+// good: all http verbs come first
+Route::get('/', 'HomeController@index')->name('home');
+Route::get('open-source', 'OpenSourceController@index')->name('openSource');
+
+// bad: http verbs not easily scannable
+Route::name('home')->get('/', 'HomeController@index');
+Route::name('openSource')->get('OpenSourceController@index');
+```
+
+Route parameters should use camelCase.
+
+```php
+Route::get('news/{newsItem}', 'NewsItemsController@index');
+```
+
+A route url should not start with `/` unless the url would be an empty string.
+
+```php
+// good
+Route::get('/', 'HomeController@index');
+Route::get('open-source', 'OpenSourceController@index');
+
+//bad
+Route::get('', 'HomeController@index');
+Route::get('/open-source', 'OpenSourceController@index');
+```
+
+## Controllers
+
+Controllers that control a resource must use the plural resource name.
+
+```php
+class PostsController
 {
     // ...
 }
 ```
 
-Named functions don't have a space before their parameters. Anonymous ones do.
+Try to keep controllers simple and stick to the default CRUD keywords (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`). Extract a new controller if you need other actions.
 
-```js
-// Good
-function save(user) {
+In the following example, we could have `PostsController@favorite`, and `PostsController@unfavorite`, or we could extract it to a separate `FavoritePostsController`.
+
+```php
+class PostsController
+{
+    public function create()
+    {
+        // ...
+    }
+
     // ...
-}
 
-// Bad, no space before the parameters.
-function save (user) {
-    // ...
-}
-```
+    public function favorite(Post $post)
+    {
+        request()->user()->favorites()->attach($post);
 
-```js
-// Good
-save(user, function (response) {
-    // ...
-});
+        return response(null, 200);
+    }
 
-// Bad, anonymous functions require a space before the parameters.
-save(user, function(response) {
-    // ...
-});
-```
+    public function unfavorite(Post $post)
+    {
+        request()->user()->favorites()->detach($post);
 
-### Spacing and Indentation in Objects and Arrays
-
-Objects and arrays require spaces between their braces and brackets. Arrays that contain an object or another array mustn't have a space between the brackets. Multiline objects and arrays require trailing commas.
-
-```js
-// Good
-const person = { name: 'Sebastian', job: 'Developer' };
-
-// Bad, no spaces between parentheses.
-const person = {name: 'Sebastian', job: 'Developer'};
-```
-
-```js
-// Good
-const person = {
-    name: 'Sebastian',
-    job: 'Developer',
-};
-
-// Bad, no trailing comma.
-const person = {
-    name: 'Sebastian',
-    job: 'Developer'
-};
-```
-
-```js
-// Good
-const pairs = [['a', 'b'], ['c', 'd']];
-const people = [{ name: 'Sebastian' }, { name: 'Willem' }];
-
-// Bad, no extra spaces if the array contains arrays or objects.
-const pairs = [ ['a', 'b'], ['c', 'd'] ];
-const people = [ { name: 'Sebastian' }, { name: 'Willem' } ];
-```
-
-### Line Length
-
-Lines shouldn't be longer than 100 characters, and mustn't be longer than 120 characters (this isn't enforced by ESLint). Comments mustn't be longer than 80 characters.
-
-### Quotes
-
-Use single quotes if possible. If you need multiline strings or interpolation, use template strings.
-
-```js
-// Good
-const company = 'Spatie';
-
-// Bad, single quotes can be used here.
-const company = "Spatie";
-
-// Bad, single quotes can be used here.
-const company = `Spatie`;
-```
-
-```js
-// Good
-function greet(name) {
-    return `Hello ${name}!`;
-}
-
-// Bad, template strings are preferred.
-function greet(name) {
-    return 'Hello ' + name + '!';
+        return response(null, 200);
+    }
 }
 ```
 
-Also, when writing html templates (or jsx for that matter), start multiline templates on a new line if possible.
+Here we fall back to default CRUD words, `store` and `destroy`.
 
-```js
-function createLabel(text) {
-    return `
-        <div class="label">
-            ${text}
-        </div>
-    `;
+```php
+class FavoritePostsController
+{
+    public function store(Post $post)
+    {
+        request()->user()->favorites()->attach($post);
+
+        return response(null, 200);
+    }
+
+    public function destroy(Post $post)
+    {
+        request()->user()->favorites()->detach($post);
+
+        return response(null, 200);
+    }
 }
 ```
 
-### Semicolons
+This is a loose guideline that doesn't need to be enforced.
 
-Always.
+## Views
 
-### Variable Assignment
+View files must use camelCase.
 
-Prefer `const` over `let`. Only use `let` to indicate that a variable will be reassigned. Never use `var`.
+```
+resources/
+  views/
+    openSource.blade.php
+```
 
-### Variable Names
-
-Variable names generally shouldn't be abbreviated.
-
-```js
-// Good
-function saveUser(user) {
-    localStorage.set('user', user);
-}
-
-// Bad, it's hard to reason about abbreviations in blocks as they grow.
-function saveUser(u) {
-    localStorage.set('user', u);
+```php
+class OpenSourceController
+{
+    public function index() {
+        return view('openSource');
+    }
 }
 ```
 
-In single-line arrow functions, abbreviations are allowed to reduce noise if the context is clear enough. For example, if you're calling `map` of `forEach` on a collection of items, it's clear that the parameter is an item of a certain type, which can be derived from the collection's substantive variable name.
+## Validation
 
-```js
-// Good
-function saveUserSessions(userSessions) {
-    userSessions.forEach(s => saveUserSession(s));
+When using multiple rules for one field in a form request, avoid using `|`, always use array notation. Using an array notation will make it easier to apply custom rule classes to a field.
+
+```php
+// good
+public function rules()
+{
+    return [
+        'email' => ['required', 'email'],
+    ];
 }
 
-// Ok, but pretty noisy.
-function saveUserSessions(userSessions) {
-    userSessions.forEach(userSession => saveUserSession(userSession));
-}
-```
-
-### Comparisons
-
-Always use a triple equal to do variable comparisons. If you're unsure of the type, cast it first.
-
-```js
-// Good
-const one = 1;
-const another = "1";
-
-if (one === parseInt(another)) {
-    // ...
-}
-
-// Bad
-const one = 1;
-const another = "1";
-
-if (one == another) {
-    // ...
+// bad
+public function rules()
+{
+    return [
+        'email' => 'required|email',
+    ];
 }
 ```
 
-### Function Keyword vs. Arrow Functions
 
-Function declarations should use the function keyword.
+All custom validation rules must use snake_case:
 
-```js
-// Good
-function scrollTo(offset) {
-    // ...
-}
-
-// Using an arrow function doesn't provide any benefits here, while the
-// `function`  keyword immediately makes it clear that this is a function.
-const scrollTo = (offset) => {
-    // ...
-};
-```
-
-Terse, single line functions can also use the arrow syntax. There's no hard rule here.
-
-```js
-// Good
-function sum(a, b) {
-    return a + b;
-}
-
-// It's a short and simple method, so squashing it to a one-liner is ok.
-const sum = (a, b) => a + b;
-```
-
-```js
-// Good
-export function query(selector) {
-    return document.querySelector(selector);
-}
-
-// This one's a bit longer, having everything on one line feels a bit heavy.
-// It's not easily scannable unlike the previous example.
-export const query = selector => document.querySelector(selector);
-```
-
-Higher-order functions can use arrow functions if it improves readability.
-
-```js
-function sum(a, b) {
-    return a + b;
-}
-
-// Good
-const adder = a => b => sum(a, b);
-
-// Ok, but unnecessarily noisy.
-function adder(a) {
-    return function (b) {
-        return sum(a, b);
-    };
-}
-```
-
-Anonymous functions should use arrow functions.
-
-```js
-['a', 'b'].map(a => a.toUpperCase());
-```
-
-Unless they need access to `this`.
-
-```js
-$('a').on('click', function () {
-    window.location = $(this).attr('href');
+```php
+Validator::extend('organisation_type', function ($attribute, $value) {
+    return OrganisationType::isValid($value);
 });
 ```
 
-Try to keep your functions pure and limit the usage of the `this` keyword.
+## Blade Templates
 
-Object methods must use the shorthand method syntax.
-
-```js
-// Good
-export default {
-    methods: {
-        handleClick(event) {
-            event.preventDefault();
-        },
-    },
-};
-
-// Bad, the `function` keyword serves no purpose.
-export default {
-    methods: {
-        handleClick: function (event) {
-            event.preventDefault();
-        },
-    },
-};
-```
-
-### Arrow Function Parameter Brackets
-
-An arrow function's parameter brackets must be omitted if the function is a one-liner.
-
-```js
-// Good
-['a', 'b'].map(a => a.toUpperCase());
-
-// Bad, the parentheses are noisy.
-['a', 'b'].map((a) => a.toUpperCase());
-```
-
-If the arrow function has its own block, parameters must be surrounded by brackets.
-
-```js
-// Good, although according to this style guide you shouldn't be using an
-// arrow function here!
-const saveUser = (user) => {
-    //
-};
-
-// Bad
-const saveUser = user => {
-    //
-};
-```
-
-If you're writing a higher order function, you should omit the parentheses even if the returned function has braces.
-
-```js
-// Good
-const adder = a => b => {
-    sum(a, b);
-};
-
-// Bad, looks inconsistent in this context.
-const adder = a => (b) => {
-    sum(a, b);
-};
-```
-
-### Object and Array Destructuring
-
-Destructuring is preferred over assigning variables to the corresponding keys.
-
-```js
-// Good
-const [hours, minutes] = '12:00'.split(':');
-
-// Bad, unnecessarily verbose, and requires an extra assignment in this case.
-const time = '12:00'.split(':');
-const hours = time[0];
-const minutes = time[1];
-```
-
-Destructuring is very valuable for passing around configuration-like objects.
-
-```js
-function uploader({
-    element,
-    url,
-    multiple = false,
-    beforeUpload = noop,
-    afterUpload = noop,
-}) {
-    // ...
-}
-```
-
-### Vue templates
-
-If a Vue component has so many props (or listeners, directives, ...) that they don't fit on one line anymore you need to put every prop on its own line. Every line needs to be intended with 4 spaces. The closing `>` goes on a new unintended line followed by the closing tag.
+Indent using four spaces.
 
 ```html
-<template>
-    <!-- Good -->
-    <my-component myProp="value"></my-component>
-</template>
+<a href="/open-source">
+    Open Source
+</a>
+```
+
+Don't add spaces after control structures.
+
+```html
+@if($condition)
+    Something
+@endif
+```
+
+## Authorization
+
+Policies must use camelCase.
+
+```php
+Gate::define('editPost', function ($user, $post) {
+    return $user->id == $post->user_id;
+});
 ```
 
 ```html
-<template>
-    <!-- Good -->
-    <my-component
-        v-if="shouldDisplay"
-        myProp="value"
-        @change="handleEvent"
-    ></my-component>
-</template>
+@can('editPost', $post)
+    <a href="{{ route('posts.edit', $post) }}">
+        Edit
+    </a>
+@endcan
 ```
 
-```html
-<template>
-    <!-- Bad: wrong indentation, closing `>` is not correct placed -->
-    <my-component
-            v-if="shouldDisplay"
-            myProp="value"
-            @change="handleEvent">
-    </my-component>
-</template>
+Try to name abilities using default CRUD words. One exception: replace `show` with `view`. A server shows a resource, a user views it.
+
+## Translations
+
+Translations must be rendered with the `__` function. We prefer using this over `@lang` in Blade views because `__` can be used in both Blade views and regular PHP code. Here's an example:
+
+```php
+<h2>{{ __('newsletter.form.title') }}</h2>
+
+{!! __('newsletter.form.description') !!}
 ```
 
-## Credits
+## Naming Classes
 
-This style guide is mainly inspired by the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript), and [Benjamin De Cock's frontend guidelines](https://github.com/bendc/frontend-guidelines).
+Naming things is often seen as one of the harder things in programming. That's why we've established some high level guidelines for naming classes.
+
+### Controllers
+
+Generally controllers are named by the plural form of their corresponding resource and a `Controller` suffix. This is to avoid naming collisions with models that are often equally named.
+
+e.g. `UsersController` or `EventDaysController`
+
+When writing non-resourceful controllers you might come across invokable controllers that perform a single action. These can be named by the action they perform again suffixed by `Controller`.
+
+e.g. `PerformCleanupController`
+
+### Resources (and transformers)
+
+Both Eloquent resources and Fractal transformers are plural resources suffixed with `Resource` or `Transformer` accordingly. This is to avoid naming collisions with models.
+
+### Jobs
+
+A job's name should describe its action.
+
+E.g. `CreateUser` or `PerformDatabaseCleanup`
+
+### Events
+
+Events will often be fired before or after the actual event. This should be very clear by the tense used in their name.
+
+E.g. `ApprovingLoan` before the action is completed and `LoanApproved` after the action is completed.
+
+### Listeners
+
+Listeners will perform an action based on an incoming event. Their name should reflect that action with a `Listener` suffix. This might seem strange at first but will avoid naming collisions with jobs.
+
+E.g. `SendInvitationMailListener`
+
+### Commands
+
+To avoid naming collisions we'll suffix commands with `Command`, so they are easiliy distinguisable from jobs.
+
+e.g. `PublishScheduledPostsCommand`
+
+### Mailables
+
+Again to avoid naming collisions we'll suffix mailables with `Mail`, as they're often used to convey an event, action or question.
+
+e.g. `AccountActivatedMail` or `NewEventMail`
