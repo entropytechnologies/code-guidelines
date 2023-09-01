@@ -205,10 +205,47 @@ Prefer `const` over `let`. Only use `let` to indicate that a variable will be re
 
 ### Variable Names
 
-Variable names generally shouldn't be abbreviated.
+Variable names generally shouldn't be abbreviated. In case of long names, snake_case will be used for variables and camelCase for functions. 
+
+```js
+
+// Good, it's easy to read and understand.
+
+const var_name = 'value';
+
+function functionName() {
+    // function body
+}
+
+// Bad
+
+const varName = 'value';
+
+function function_name() {
+    // function body
+}
+
+// ATTENTION: They must never be written using the same case. 
+
+const varName = 'value';
+
+function functionName() {
+    // function body
+}
+
+const var_name = 'value';
+
+function function_name() {
+    // function body
+}
+
+```
+
+Abbreviations are allowed in single-line arrow functions if the context is clear enough.
 
 ```js
 // Good
+
 function saveUser(user) {
     localStorage.set('user', user);
 }
